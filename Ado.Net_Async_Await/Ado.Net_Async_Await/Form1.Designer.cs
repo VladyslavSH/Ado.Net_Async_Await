@@ -55,6 +55,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(217, 20);
             this.textBox1.TabIndex = 1;
+            this.textBox1.Text = "select * from Books";
             // 
             // comboBox1
             // 
