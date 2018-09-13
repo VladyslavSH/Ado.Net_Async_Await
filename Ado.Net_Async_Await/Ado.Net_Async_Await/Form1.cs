@@ -15,9 +15,8 @@ namespace Ado.Net_Async_Await
     public partial class Form1 : Form
     {
         SqlConnection sqlConnection = null;
-        SqlDataAdapter sqlAdapter = null;
-        DataSet dataSet = null;
-        SqlCommandBuilder sqlBuilder = null;
+        DataTable dataTable = null;
+        SqlCommand sqlCommand = null;
         string connectionString = ConfigurationManager.ConnectionStrings["MyConnString"].ConnectionString;
         string select = "waitfor delay '00:00:10';";
         public Form1()
@@ -32,10 +31,10 @@ namespace Ado.Net_Async_Await
             button1.Enabled = false;
             try
             {
-                sqlConnection.Open();
+                await sqlConnection.OpenAsync();
                 if (textBox1.Text != String.Empty && textBox1.Text == "select * from Books")
                 {
-                      await FillAsync();
+                    await FillAsync();
                 }
             }
             catch (Exception ex)
@@ -49,13 +48,34 @@ namespace Ado.Net_Async_Await
         }
         private async Task FillAsync()
         {
-            dataGridView1.DataSource = null;
             select += textBox1.Text;
-            dataSet = new DataSet();
-            sqlAdapter = new SqlDataAdapter(select, sqlConnection);
-            sqlBuilder = new SqlCommandBuilder(sqlAdapter);
-            sqlAdapter.Fill(dataSet);
-            dataGridView1.DataSource = dataSet.Tables[0];
+            sqlCommand = new SqlCommand(select, sqlConnection);
+            dataTable = new DataTable();
+            SqlDataReader reader = await sqlCommand.ExecuteReaderAsync();
+            int line = 0;
+            do
+            {
+                while (await reader.ReadAsync())
+                {
+                    if (line == 0)
+                    {
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            dataTable.Columns.Add(reader.GetName(i));
+                        }
+                        line++;
+                        DataRow row = dataTable.NewRow();
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            row[i] = reader[i];
+                        }
+                        dataTable.Rows.Add(row);
+                    }
+
+                }
+            } while (await reader.NextResultAsync());
+            dataGridView1.DataSource = null;
+            dataGridView1.DataSource = dataTable;
         }
     }
 }
